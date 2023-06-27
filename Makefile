@@ -1,6 +1,14 @@
 # Image URL to use all building/pushing image targets
-REGISTRY ?= <YOUR REGISTRY>
-IMAGE_NAME ?= cluster-api-cox-controller:<YOUR TAG>
+FIPS_ENABLE ?= ""
+
+RELEASE_LOC := release
+ifeq ($(FIPS_ENABLE),yes)
+  RELEASE_LOC := release-fips
+endif
+
+REGISTRY ?= gcr.io/spectro-dev-public/${RELEASE_LOC}/cluster-api
+IMG_TAG ?= v0.5.4-spectro-${SPECTRO_VERSION}
+IMAGE_NAME ?= cluster-api-cox-controller:${IMG_TAG}
 IMG ?= $(REGISTRY)/$(IMAGE_NAME)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
