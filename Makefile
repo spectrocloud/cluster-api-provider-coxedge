@@ -6,7 +6,8 @@ ifeq ($(FIPS_ENABLE),yes)
   RELEASE_LOC := release-fips
 endif
 
-REGISTRY ?= gcr.io/spectro-dev-public/${RELEASE_LOC}/cluster-api
+REGISTRY ?= gcr.io/spectro-dev-public/${RELEASE_LOC}/cluster-api-cox
+SPECTRO_VERSION ?= 4.0.0-dev
 IMG_TAG ?= v0.5.4-spectro-${SPECTRO_VERSION}
 IMAGE_NAME ?= cluster-api-cox-controller:${IMG_TAG}
 IMG ?= $(REGISTRY)/$(IMAGE_NAME)
@@ -125,7 +126,7 @@ run: manifests generate ## Run a controller from your host.
 ##@ Docker
 
 docker-build:  ## Build docker image with the manager.
-	DOCKER_BUILDKIT=1 docker build -t ${IMG} .
+	DOCKER_BUILDKIT=1 docker build --build-arg CRYPTO_LIB=${FIPS_ENABLE} -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
