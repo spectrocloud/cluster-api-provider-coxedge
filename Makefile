@@ -131,6 +131,9 @@ run: manifests generate ## Run a controller from your host.
 
 ##@ Docker
 
+docker-build-%: ## Build docker images for a given ARCH
+	$(MAKE) ARCH=$* docker-build
+
 .PHONY: docker-build-all ## Build all the architecture docker images
 docker-build-all: $(addprefix docker-build-,$(ALL_ARCH))
 
