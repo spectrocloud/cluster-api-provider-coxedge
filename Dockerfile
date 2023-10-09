@@ -1,36 +1,55 @@
 # syntax = docker/dockerfile:1-experimental
 
 # Build the manager binary
-FROM golang:1.19.10-alpine3.18 as builder
+ARG BUILDER_GOLANG_VERSION
+# First stage: build the executable.
+FROM --platform=$TARGETPLATFORM gcr.io/spectro-images-public/golang:${BUILDER_GOLANG_VERSION}-alpine as toolchain
+# Run this with docker build --build_arg $(go env GOPROXY) to override the goproxy
+ARG goproxy=https://proxy.golang.org
+ENV GOPROXY=$goproxy
+
+# FIPS
 ARG CRYPTO_LIB
 ENV GOEXPERIMENT=${CRYPTO_LIB:+boringcrypto}
 
-RUN apk update
-RUN apk add git gcc g++ curl
-
+FROM toolchain as builder
 WORKDIR /workspace
+
+RUN apk update
+RUN apk add git gcc g++ curl binutils-gold
+
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
+# Cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN go mod download
+RUN  --mount=type=cache,target=/root/.local/share/golang \
+     --mount=type=cache,target=/go/pkg/mod \
+     go mod download
 
 # Copy the go source
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
 COPY pkg/ pkg/
+# Copy the sources
+COPY ./ ./
 
 # Build
-
-RUN --mount=type=cache,target=/root/.cache/go-build \
+ARG ARCH
+ARG ldflags
+RUN --mount=type=bind,target=. \
+    --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
     if [ ${CRYPTO_LIB} ]; \
     then \
-      CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -ldflags "-linkmode=external -extldflags=-static" -o manager main.go ;\
+      GOARCH=${ARCH} go-build-fips.sh -a -o manager main.go ;\
     else \
-      CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o manager main.go ;\
-    fi
+      GOARCH=${ARCH} go-build-static.sh -a -o manager main.go ;\
+    fi \
+RUN if [ "${CRYPTO_LIB}" ]; then assert-static.sh manager; fi
+RUN if [ "${CRYPTO_LIB}" ]; then assert-fips.sh manager; fi
+RUN scan-govulncheck.sh manager
        
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

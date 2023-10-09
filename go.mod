@@ -1,6 +1,6 @@
 module github.com/coxedge/cluster-api-provider-cox
 
-go 1.19
+go 1.21
 
 require (
 	github.com/erwinvaneyk/cobras v0.0.0-20200914200705-1d2dfabe2493
