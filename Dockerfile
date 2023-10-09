@@ -46,7 +46,7 @@ RUN --mount=type=bind,target=. \
       GOARCH=${ARCH} go-build-fips.sh -a -o manager main.go ;\
     else \
       GOARCH=${ARCH} go-build-static.sh -a -o manager main.go ;\
-    fi \
+    fi
 RUN if [ "${CRYPTO_LIB}" ]; then assert-static.sh manager; fi
 RUN if [ "${CRYPTO_LIB}" ]; then assert-fips.sh manager; fi
 RUN scan-govulncheck.sh manager
