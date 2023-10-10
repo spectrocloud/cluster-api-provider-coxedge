@@ -139,7 +139,7 @@ docker-build-%: ## Build docker images for a given ARCH
 docker-build-all: $(addprefix docker-build-,$(ALL_ARCH))
 
 docker-build:  ## Build docker image with the manager.
-	DOCKER_BUILDKIT=1 docker buildx build --load --platform linux/${ARCH} ${BUILD_ARGS} --build-arg ARCH=$(ARCH) -t ${IMG} .
+	DOCKER_BUILDKIT=1 docker buildx build --load --platform linux/${ARCH} ${BUILD_ARGS} --build-arg ARCH=$(ARCH) -t $(IMAGE)-$(ARCH):$(IMG_TAG) .
 
 docker-push-%: ## Docker push
 	$(MAKE) ARCH=$* docker-push
