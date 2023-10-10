@@ -23,9 +23,7 @@ COPY go.mod go.mod
 COPY go.sum go.sum
 # Cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN  --mount=type=cache,target=/root/.local/share/golang \
-     --mount=type=cache,target=/go/pkg/mod \
-     go mod download
+RUN go mod download
 
 # Copy the go source
 COPY main.go main.go
@@ -38,9 +36,7 @@ COPY ./ ./
 # Build
 ARG ARCH
 ARG ldflags
-RUN --mount=type=bind,target=. \
-    --mount=type=cache,target=/go/pkg/mod \
-    if [ ${CRYPTO_LIB} ]; \
+RUN if [ ${CRYPTO_LIB} ]; \
     then \
       GOARCH=${ARCH} go-build-fips.sh -a -o manager main.go ;\
     else \
