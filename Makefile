@@ -1,6 +1,12 @@
 # Image URL to use all building/pushing image targets
 FIPS_ENABLE ?= ""
 
+BUILDER_GOLANG_VERSION ?= 1.21
+BUILD_ARGS = --build-arg CRYPTO_LIB=${FIPS_ENABLE} --build-arg BUILDER_GOLANG_VERSION=${BUILDER_GOLANG_VERSION}
+
+ARCH ?= amd64
+ALL_ARCH = amd64 arm64
+
 RELEASE_LOC := release
 ifeq ($(FIPS_ENABLE),yes)
   RELEASE_LOC := release-fips
@@ -11,6 +17,7 @@ SPECTRO_VERSION ?= 4.0.0-dev
 IMG_TAG ?= v0.5.5-spectro-${SPECTRO_VERSION}
 IMAGE_NAME ?= cluster-api-cox-controller:${IMG_TAG}
 IMG ?= $(REGISTRY)/$(IMAGE_NAME)
+IMAGE ?= gcr.io/spectro-dev-public/${RELEASE_LOC}/cluster-api-coxedge/cluster-api-cox-controller
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -125,11 +132,31 @@ run: manifests generate ## Run a controller from your host.
 
 ##@ Docker
 
+docker-build-%: ## Build docker images for a given ARCH
+	$(MAKE) ARCH=$* docker-build
+
+.PHONY: docker-build-all ## Build all the architecture docker images
+docker-build-all: $(addprefix docker-build-,$(ALL_ARCH))
+
 docker-build:  ## Build docker image with the manager.
-	DOCKER_BUILDKIT=1 docker build --build-arg CRYPTO_LIB=${FIPS_ENABLE} -t ${IMG} .
+	DOCKER_BUILDKIT=1 docker buildx build --load --platform linux/${ARCH} ${BUILD_ARGS} --build-arg ARCH=$(ARCH) -t $(IMAGE)-$(ARCH):$(IMG_TAG) .
+
+docker-push-%: ## Docker push
+	$(MAKE) ARCH=$* docker-push
+
+.PHONY: docker-push-all ## Push all the architecture docker images
+docker-push-all: $(addprefix docker-push-,$(ALL_ARCH))
+	$(MAKE) docker-push-manifest
 
 docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+	docker push $(IMAGE)-$(ARCH):$(IMG_TAG)
+
+.PHONY: docker-push-manifest
+docker-push-manifest: ## Push the fat manifest docker image.
+	## Minimum docker version 18.06.0 is required for creating and pushing manifest images.
+	docker manifest create --amend ${IMG} $(shell echo $(ALL_ARCH) | sed -e "s~[^ ]*~$(IMAGE)\-&:$(IMG_TAG)~g")
+	@for arch in $(ALL_ARCH); do docker manifest annotate --arch $${arch} ${IMAGE}:${IMG_TAG} ${IMAGE}-$${arch}:${IMG_TAG}; done
+	docker manifest push --purge ${IMAGE}:${IMG_TAG}
 
 .PHONY: docker-clean
 docker-clean:
