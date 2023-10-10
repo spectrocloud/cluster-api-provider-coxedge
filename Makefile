@@ -156,18 +156,6 @@ docker-push-manifest: ## Push the fat manifest docker image.
 	docker manifest create --amend ${IMG} $(shell echo $(ALL_ARCH) | sed -e "s~[^ ]*~$(IMAGE)\-&:$(IMG_TAG)~g")
 	@for arch in $(ALL_ARCH); do docker manifest annotate --arch $${arch} ${IMAGE}:${IMG_TAG} ${IMAGE}-$${arch}:${IMG_TAG}; done
 	docker manifest push --purge ${IMAGE}:${IMG_TAG}
-	MANIFEST_IMG=$(IMAGE) MANIFEST_TAG=$(IMG_TAG) $(MAKE) set-manifest-image
-	$(MAKE) set-manifest-pull-policy
-
-.PHONY: set-manifest-image
-set-manifest-image:
-	$(info Updating kustomize image patch file for default resource)
-	sed -i'' -e 's@image: .*@image: '"${MANIFEST_IMG}:$(MANIFEST_TAG)"'@' ./config/default/manager_image_patch.yaml
-
-.PHONY: set-manifest-pull-policy
-set-manifest-pull-policy:
-	$(info Updating kustomize pull policy file for default resource)
-	sed -i'' -e 's@imagePullPolicy: .*@imagePullPolicy: '"$(PULL_POLICY)"'@' ./config/default/manager_pull_policy.yaml
 
 .PHONY: docker-clean
 docker-clean:
