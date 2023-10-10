@@ -140,6 +140,9 @@ docker-build-all: $(addprefix docker-build-,$(ALL_ARCH))
 docker-build:  ## Build docker image with the manager.
 	DOCKER_BUILDKIT=1 docker buildx build --load --platform linux/${ARCH} ${BUILD_ARGS} --build-arg ARCH=$(ARCH) -t ${IMG} .
 
+docker-push-%: ## Docker push
+	$(MAKE) ARCH=$* docker-push
+
 .PHONY: docker-push-all ## Push all the architecture docker images
 docker-push-all: $(addprefix docker-push-,$(ALL_ARCH))
 	$(MAKE) docker-push-manifest
