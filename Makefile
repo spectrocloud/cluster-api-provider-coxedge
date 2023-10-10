@@ -149,7 +149,7 @@ docker-push-all: $(addprefix docker-push-,$(ALL_ARCH))
 	$(MAKE) docker-push-manifest
 
 docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+	docker push $(IMAGE)-$(ARCH):$(IMG_TAG)
 
 .PHONY: docker-push-manifest
 docker-push-manifest: ## Push the fat manifest docker image.
