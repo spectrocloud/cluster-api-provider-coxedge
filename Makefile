@@ -17,7 +17,7 @@ SPECTRO_VERSION ?= 4.0.0-dev
 IMG_TAG ?= v0.5.5-spectro-${SPECTRO_VERSION}
 IMAGE_NAME ?= cluster-api-cox-controller:${IMG_TAG}
 IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-IMAGE ?= gcr.io/spectro-dev-public/${RELEASE_LOC}/cluster-api-coxedge/cluster-api-cox-controller
+IMAGE ?= $(REGISTRY)/cluster-api-cox-controller
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
