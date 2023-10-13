@@ -62,7 +62,7 @@ jobs:
         name: Build Image - FIPS Mode
         env:
           FIPS_ENABLE: yes
-          DEV_REGISTRY: ${{ env.FIPS_REGISTRY }}
+          REGISTRY: ${{ env.FIPS_REGISTRY }}
           ALL_ARCH: amd64
         run: |
           make docker-build-all
