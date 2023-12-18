@@ -234,7 +234,7 @@ func (c *Client) Do(req *http.Request, v interface{}) error {
 	}
 
 	defer resp.Body.Close()
-	if resp.StatusCode >= 300 {
+	if resp.StatusCode >= 300 && resp.StatusCode != http.StatusNotFound {
 		o, _ := io.ReadAll(resp.Body)
 		return &HTTPError{
 			StatusCode: resp.StatusCode,
